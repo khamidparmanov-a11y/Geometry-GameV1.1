@@ -1,18 +1,15 @@
-self.addEventListener("install", e => {
-  e.waitUntil(
-    caches.open("game-cache").then(cache => {
-      return cache.addAll([
-        "index.html",
-        "manifest.json",
-        "icon-192.png",
-        "icon-512.png"
-      ]);
-    })
-  );
+function jumpControl(e) {
+    e.preventDefault();
+    jump();
+}
+
+// клавиатура
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") jump();
 });
 
-self.addEventListener("fetch", e => {
-  e.respondWith(
-    caches.match(e.request).then(res => res || fetch(e.request))
-  );
-});
+// мышка
+document.addEventListener("mousedown", jumpControl);
+
+// палец (телефон)
+document.addEventListener("touchstart", jumpControl, { passive:false });
