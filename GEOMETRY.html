@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🏆 Geometry Dash </title>
+    <style>
+        * { touch-action: manipulation; margin: 0; padding: 0; }
+        body { 
+            background: #000; overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            color: white; height: 100vh; user-select: none;
+        }
+        canvas { 
+            display: block; width: 100%; height: 100vh; 
+            max-width: 800px; max-height: 450px; margin: 0 auto;
+            background: linear-gradient(180deg, #000b1a 0%, #000415 100%);
+            border-bottom: 5px solid #00f2ff;
+        }
+        #overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.95); z-index: 100; padding: 30px; box-sizing: border-box;
+        }
+        .menu-btn { 
+            padding: 20px 35px; margin: 15px; font-size: 22px; cursor: pointer; 
+            background: linear-gradient(45deg, #00f2ff, #0099cc); border: none; 
+            color: #000; font-weight: bold; border-radius: 20px; width: 95%; max-width: 400px; 
+            transition: all 0.3s; box-shadow: 0 8px 25px rgba(0,242,255,0.4);
+            touch-action: manipulation;
+        }
+        .menu-btn:active { transform: scale(0.98); }
+        .menu-btn:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; box-shadow: none; }
+        .menu-btn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 12px 35px rgba(0,242,255,0.6); }
+        #shop { display: none; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 30px 0; max-height: 60vh; overflow-y: auto; width: 100%; }
+        .skin-card { background: linear-gradient(145deg, #1f1f1f, #111); border: 3px solid #333; padding: 20px; text-align: center; border-radius: 25px; width: 170px; box-shadow: 0 12px 35px rgba(0,0,0,0.8); transition: 0.3s; }
+        .skin-card:hover { transform: translateY(-10px); border-color: #00f2ff; box-shadow: 0 20px 45px rgba(0,242,255,0.3); }
+        .skin-box { width: 70px; height: 70px; margin: 0 auto 15px; border: 4px solid #fff; border-radius: 18px; box-shadow: inset 0 4px 8px rgba(0,0,0,0.6); }
+        #stats { position: absolute; top: 25px; left: 25px; font-size: 24px; z-index: 50; padding: 20px; background: rgba(0,0,0,0.95); border-radius: 25px; border: 3px solid #00f2ff; min-width: 260px; box-shadow: 0 8px 30px rgba(0,0,0,0.8); }
+        .coin-txt { color: #ffd700; text-shadow: 0 0 15px #ffd700; display: block; margin: 5px 0; } 
+        .diam-txt { color: #00e5ff; text-shadow: 0 0 15px #00e5ff; display: block; margin: 5px 0; }
+        #msg { margin-bottom: 35px; font-size: 40px; font-weight: bold; text-transform: uppercase; text-align: center; text-shadow: 0 0 30px #00f2ff; letter-spacing: 3px; }
+        #timer { position: absolute; top: 25px; right: 25px; font-size: 28px; color: #00ff00; z-index: 50; display: none; text-shadow: 0 0 25px #00ff00; font-weight: bold; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 20px; border: 3px solid #00ff00; }
+        #jumps { position: absolute; top: 90px; right: 25px; font-size: 22px; color: #ffd700; z-index: 50; text-shadow: 0 0 15px #ffd700; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 15px; border: 2px solid #ffd700; }
+        @media (max-width: 600px) { .menu-btn { font-size: 20px; padding: 18px 30px; } .skin-card { width: 48%; } #msg { font-size: 32px; } }
+    </style>
+</head>
+<body>
+
+<div id="stats">
+    <div class="coin-txt">🪙 <span id="cVal">0</span></div>
+    <div class="diam-txt">💎 <span id="dVal">0</span></div>
+</div>
+
+<div id="timer">⏱️ <span id="timeVal">0</span>с</div>
+<div id="jumps">🦘 <span id="jumpVal">0</span>/100</div>
+
+<div id="overlay">
+    <div id="msg">🏆 Geometry Dash AI</div>
+    
+    <div id="mainMenu">
+        <button class="menu-btn" onclick="startLevel(1)">⭐ ЛЕГКИЙ (100 шипов)</button>
+        <button class="menu-btn" id="l2Btn" onclick="startLevel(2)" disabled>🔒 СРЕДНИЙ (300)</button>
+        <button class="menu-btn" id="l3Btn" onclick="startLevel(3)" disabled>🔒 СЛОЖНЫЙ (500)</button>
+        <button class="menu-btn" style="background:linear-gradient(45deg,#ff0055,#cc0044);color:#fff;box-shadow:0 8px 25px rgba(255,0,85,0.5)" onclick="openShop()">🛒 МАГАЗИН</button>
+    </div>
+
+    <div id="shop"></div>
+    <button id="backBtn" class="menu-btn" style="display:none;background:linear-gradient(45deg,#666,#444);color:#fff;box-shadow:0 8px 25px rgba(0,0,0,0.6)" onclick="closeShop()">← МЕНЮ</button>
+</div>
+
+<canvas id="gd"></canvas>
+
+<script>
+const canvas=document.getElementById('gd'),ctx=canvas.getContext('2d');canvas.width=800;canvas.height=450;
+
+let wallet={coins:0,diamonds:parseInt(localStorage.getItem('gdDiamonds'))||0},progress={unlocked:parseInt(localStorage.getItem('gdProgress'))||1},activeSkin=0,boughtSkins=[0],jumps=0;
+
+const skins=[{name:"💎 Обычный",c:"#00f2ff",sc:"#00f2ff",p:0,t:'c'},{name:"🔥 Красный",c:"#ff0000",sc:"#ff0000",p:500,t:'c'},{name:"🌿 Зеленый",c:"#00ff00",sc:"#00ff00",p:300,t:'c'},{name:"⭐ Серебро",c:"#c0c0c0",sc:"#c0c0c0",p:600,t:'c'},{name:"👁️ Двуцвет",c:"#ff0000",sc:"#0000ff",p:800,t:'c',eyes:true},{name:"🤖 РОБОТ",c:"#888888",sc:"#444444",p:5,t:'d',robot:true}],lvls={1:{target:100,speed:5},2:{target:300,speed:7},3:{target:500,speed:9}};
+
+let game={active:false,lvl:1,py:360,pvy:0,prot:0,pg:true,obs:[],passed:0,frame:0,robotTime:0,topSpikes:[]},keys={};
+
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Escape'){if(game.active)quitToMenu();else if(document.getElementById('shop').style.display==='flex')closeShop();}});document.addEventListener('keyup',e=>keys[e.code]=false);canvas.addEventListener('mousedown',()=>keys['Mouse']=true);document.addEventListener('mouseup',()=>keys['Mouse']=false);canvas.addEventListener('touchstart',e=>{e.preventDefault();keys['Touch']=true});canvas.addEventListener('touchend',e=>{e.preventDefault();keys['Touch']=false});
+
+function saveDiamonds(){localStorage.setItem('gdDiamonds',wallet.diamonds);localStorage.setItem('gdProgress',progress.unlocked)}function updateButtons(){document.getElementById('l2Btn').disabled=progress.unlocked<2;document.getElementById('l3Btn').disabled=progress.unlocked<3;document.getElementById('cVal').innerText=wallet.coins;document.getElementById('dVal').innerText=wallet.diamonds;saveDiamonds()}
+
+function startLevel(n){game={active:true,lvl:n,py:360,pvy:0,prot:0,pg:true,obs:[],passed:0,frame:0,robotTime:0,topSpikes:[]};game.target=lvls[n].target;jumps=0;document.getElementById('overlay').style.display='none';document.getElementById('timer').style.display='none'}function quitToMenu(){game.active=false;document.getElementById('overlay').style.display='flex';document.getElementById('msg').innerText='🏆 Geometry Dash AI';updateButtons()}
+
+function openShop(){document.getElementById('mainMenu').style.display='none';document.getElementById('backBtn').style.display='block';document.getElementById('shop').style.display='flex';document.getElementById('msg').innerText='🛒 МАГАЗИН';const shopDiv=document.getElementById('shop');shopDiv.innerHTML='';skins.forEach((s,i)=>{const bought=boughtSkins.includes(i),can=s.t==='c'?wallet.coins>=s.p:wallet.diamonds>=s.p;const card=document.createElement('div');card.className='skin-card';card.innerHTML=`<div class="skin-box" style="background:${s.c};border-top:18px solid ${s.sc}"></div><div style="font-size:15px;font-weight:bold;margin-bottom:12px;min-height:50px;">${s.name}</div><div style="font-size:17px;color:${s.t==='c'?'#ffd700':'#00e5ff'};margin-bottom:15px;font-weight:bold;">${s.p} ${s.t==='c'?'🪙':'💎'}</div><button style="width:100%;padding:14px;font-size:14px;font-weight:bold;border-radius:12px;border:none;cursor:pointer;${bought?'background:linear-gradient(45deg,#00ff88,#00cc66);color:#000;box-shadow:0 5px 20px rgba(0,255,136,0.5)':can?'background:linear-gradient(45deg,#00f2ff,#0099cc);color:#000;box-shadow:0 5px 20px rgba(0,242,255,0.5)':'background:#555;color:#aaa;box-shadow:none'}" onclick="buySkin(${i})" ${!bought&&!can?'disabled':''}>${bought?(activeSkin===i?'⭐ АКТИВЕН':'👕 НАДЕТЬ'):'💰 КУПИТЬ'}</button>`;shopDiv.appendChild(card)})}function buySkin(i){const s=skins[i],bought=boughtSkins.includes(i);if(!bought){if(s.t==='c'&&wallet.coins>=s.p){wallet.coins-=s.p}else if(wallet.diamonds>=s.p){wallet.diamonds-=s.p}else{alert('❌ Недостаточно!');return}boughtSkins.push(i);alert(`✅ "${s.name}" куплен!`)}else{activeSkin=i;alert(`👕 "${s.name}" надет!`)}updateButtons();openShop()}function closeShop(){document.getElementById('mainMenu').style.display='flex';document.getElementById('shop').style.display='none';document.getElementById('backBtn').style.display='none';document.getElementById('msg').innerText='🏆 Geometry Dash AI'}
+
+function loop(){if(game.active){const l=lvls[game.lvl];if((keys['Space']||keys['Mouse']||keys['Touch'])&&game.pg){game.pvy=-14;game.pg=false;jumps++;document.getElementById('jumpVal').innerText=jumps;if(jumps%100===0){wallet.diamonds++;alert('🎉 100 прыжков = +1 💎!');saveDiamonds()}}if(activeSkin===5&&boughtSkins.includes(5)){if(keys['KeyE']&&game.obs.length>0){const d=Math.min(5,game.obs.length);game.obs.splice(0,d);alert(`🤖 Уничтожено ${d} шипов!`);keys['KeyE']=false}if(keys['KeyR']&&game.robotTime===0){game.robotTime=1200;alert('🤖 Неуязвимость 20с!');keys['KeyR']=false}}game.pvy+=0.9;game.py+=game.pvy;if(game.py>=360){game.py=360;game.pvy=0;game.pg=true;game.prot=0}else game.prot+=0.18;if(game.frame%68===0&&game.passed+game.obs.length<game.target){game.obs.push({x:850,passed:false});if(Math.random()<0.4)game.topSpikes.push({x:850})}game.obs=game.obs.filter(s=>{s.x-=l.speed;if(!s.passed&&s.x<110){s.passed=true;game.passed++;if(game.passed%5===0){wallet.coins+=50;alert(`💰 +50 монет (${game.passed} шипов)!`)}}if(game.robotTime===0&&s.x>95&&s.x<145&&game.py>330){gameOver();return false}return s.x>-60});game.topSpikes=game.topSpikes.filter(s=>{s.x-=l.speed;if(game.robotTime===0&&s.x>95&&s.x<145&&game.py<85){gameOver();return false}return s.x>-60});if(game.robotTime>0){game.robotTime--;document.getElementById('timer').style.display='block';document.getElementById('timeVal').textContent=Math.ceil(game.robotTime/60)}else document.getElementById('timer').style.display='none';if(game.passed>=game.target){game.active=false;if(progress.unlocked<=game.lvl){progress.unlocked=game.lvl+1;if(game.lvl===3){wallet.diamonds+=10;alert('🏆 ПОБЕДА! +10 💎')}else alert(`✅ Уровень ${game.lvl+1} открыт!`)}document.getElementById('overlay').style.display='flex';document.getElementById('msg').innerText='🎉 ПОБЕДА!';updateButtons()}game.frame++}render();requestAnimationFrame(loop)}function gameOver(){game.active=false;document.getElementById('overlay').style.display='flex';document.getElementById('msg').innerText='💥 GAME OVER';updateButtons()}function render(){ctx.clearRect(0,0,800,450);const g=ctx.createLinearGradient(0,400,0,450);g.addColorStop(0,'#00f2ff');g.addColorStop(1,'#0099cc');ctx.fillStyle=g;ctx.fillRect(0,400,800,50);ctx.fillStyle='#333';ctx.fillRect(0,0,800,3);ctx.strokeStyle='rgba(0,242,255,0.12)';ctx.lineWidth=1;for(let x=0;x<900;x+=50){ctx.beginPath();ctx.moveTo((x-game.frame*1.5)%800,0);ctx.lineTo((x-game.frame*1.5)%800,450);ctx.stroke()}const s=skins[activeSkin];ctx.save();ctx.translate(130,game.py+20);ctx.rotate(game.prot);if(game.robotTime>0&&Math.floor(game.frame/4)%2)ctx.globalAlpha=0.7;ctx.fillStyle=s.c;ctx.shadowColor=s.c;ctx.shadowBlur=18;ctx.fillRect(-22,-22,44,44);if(s.sc&&s.sc!==s.c){ctx.fillStyle=s.sc;ctx.shadowColor=s.sc;ctx.shadowBlur=12;ctx.fillRect(-22,0,44,22)}if(s.eyes){ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-12,-10,6,0,Math.PI*2);ctx.arc(12,-10,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#000';ctx.beginPath();ctx.arc(-12,-10,3,0,Math.PI*2);ctx.arc(12,-10,3,0,Math.PI*2);ctx.fill()}if(s.robot){ctx.shadowColor='#666';ctx.shadowBlur=10;ctx.fillStyle='#666';ctx.fillRect(28,-15,20,12);ctx.shadowColor='#00ff00';ctx.shadowBlur=15;ctx.fillStyle='#00ff00';ctx.beginPath();ctx.arc(38,-9,5,0,Math.PI*2);ctx.fill()}ctx.shadowBlur=0;ctx.lineWidth=4;ctx.strokeStyle='#ffffff';ctx.shadowColor='#ffffff';ctx.shadowBlur=10;ctx.strokeRect(-22,-22,44,44);ctx.restore();ctx.globalAlpha=1;game.obs.forEach(spike=>{const sg=ctx.createLinearGradient(spike.x-10,400,spike.x+30,355);sg.addColorStop(0,'#ff0055');sg.addColorStop(1,'#cc0044');ctx.fillStyle=sg;ctx.shadowColor='#ff0055';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(spike.x,400);ctx.lineTo(spike.x+25,355);ctx.lineTo(spike.x+50,400);ctx.closePath();ctx.fill()});game.topSpikes.forEach(spike=>{const sg=ctx.createLinearGradient(spike.x-10,0,spike.x+30,45);sg.addColorStop(0,'#ffaa00');sg.addColorStop(1,'#cc8800');ctx.fillStyle=sg;ctx.shadowColor='#ffaa00';ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(spike.x,0);ctx.lineTo(spike.x+25,45);ctx.lineTo(spike.x+50,0);ctx.closePath();ctx.fill()});if(game.active){ctx.fillStyle='rgba(255,255,255,0.98)';ctx.shadowColor='white';ctx.shadowBlur=20;ctx.font='bold 36px Arial';ctx.textAlign='center';ctx.fillText(`${game.passed}/${game.target}`,400,55);ctx.textAlign='left';if(activeSkin===5){ctx.fillStyle='#00ff00';ctx.shadowColor='#00ff00';ctx.shadowBlur=25;ctx.font='bold 22px Arial';ctx.fillText('E=5шипов R=неуязв',20,440)}}}updateButtons();loop();
+</script>
+</body>
+</html>
