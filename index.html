@@ -75,7 +75,7 @@ const canvas=document.getElementById('gd'),ctx=canvas.getContext('2d');canvas.wi
 
 let wallet={coins:0,diamonds:parseInt(localStorage.getItem('gdDiamonds'))||0},progress={unlocked:parseInt(localStorage.getItem('gdProgress'))||1},activeSkin=0,boughtSkins=[0],jumps=0;
 
-const skins=[{name:"💎 Обычный",c:"#00f2ff",sc:"#00f2ff",p:0,t:'c'},{name:"🔥 Красный",c:"#ff0000",sc:"#ff0000",p:500,t:'c'},{name:"🌿 Зеленый",c:"#00ff00",sc:"#00ff00",p:300,t:'c'},{name:"⭐ Серебро",c:"#c0c0c0",sc:"#c0c0c0",p:600,t:'c'},{name:"👁️ Двуцвет",c:"#ff0000",sc:"#0000ff",p:800,t:'c',eyes:true},{name:"🤖 РОБОТ",c:"#888888",sc:"#444444",p:5,t:'d',robot:true}],lvls={1:{target:100,speed:5},2:{target:300,speed:7},3:{target:500,speed:9}};
+const skins=[{name:"💎 Обычный",c:"#00f2ff",sc:"#00f2ff",p:100,t:'c'},{name:"🔥 Красный",c:"#ff0000",sc:"#ff0000",p:500,t:'c'},{name:"🌿 Зеленый",c:"#00ff00",sc:"#00ff00",p:800,t:'c'},{name:"⭐ Серебро",c:"#c0c0c0",sc:"#c0c0c0",p:1000,t:'c'},{name:"👁️ Двуцвет",c:"#ff0000",sc:"#0000ff",p:1400,t:'c',eyes:true},{name:"🤖 РОБОТ",c:"#888888",sc:"#444444",p:5,t:'d',robot:true}],lvls={1:{target:100,speed:3},2:{target:300,speed:7},3:{target:500,speed:9}};
 
 let game={active:false,lvl:1,py:360,pvy:0,prot:0,pg:true,obs:[],passed:0,frame:0,robotTime:0,topSpikes:[]},keys={};
 
